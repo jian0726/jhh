@@ -11,10 +11,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -41,15 +42,46 @@ public class ShangPinService {
         shangPin.setYouXiZhangHao(request.getYouXiZhangHao());
         shangPin.setYouXiMiMa(request.getYouXiMiMa());
         shangPin.setZhangHaoMiaoShu(request.getZhangHaoMiaoShu());
-        shangPin.setRiZuJiaGe(request.getRiZuJiaGe());
+        shangPin.setRiZuJiaGe(resolveRiZuJiaGe(request));
         shangPin.setZuiShaoZuJieTianShu(
                 request.getZuiShaoZuJieTianShu() != null ? request.getZuiShaoZuJieTianShu() : 1);
-        shangPin.setZhuangTai(0);
+        // 前端上架页只提交 preRent（预收租金），直接置为已上架，保证发布后即可在商城列表看到
+        shangPin.setZhuangTai(1);
 
         // 序列化游戏专用字段为 metadata JSON
         shangPin.setMetadata(serializeMetadata(request));
 
         return shangPinRepository.save(shangPin);
+    }
+
+    /**
+     * 解析租金：前端提交的是 preRent/zuJin 字符串，数据库 ri_zu_jia_ge 为非空列，
+     * 因此当 riZuJiaGe 缺失时从 preRent、zuJin 兜底解析，避免 NOT NULL 约束导致上架失败。
+     */
+    private BigDecimal resolveRiZuJiaGe(ShangPinRequest req) {
+        if (req.getRiZuJiaGe() != null) {
+            return req.getRiZuJiaGe();
+        }
+        BigDecimal fromPreRent = parseDecimal(req.getPreRent());
+        if (fromPreRent != null) {
+            return fromPreRent;
+        }
+        BigDecimal fromZuJin = parseDecimal(req.getZuJin());
+        if (fromZuJin != null) {
+            return fromZuJin;
+        }
+        return BigDecimal.ZERO;
+    }
+
+    private BigDecimal parseDecimal(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return new BigDecimal(value.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     /**
@@ -154,9 +186,16 @@ public class ShangPinService {
         shangPin.setYouXiZhangHao(request.getYouXiZhangHao());
         shangPin.setYouXiMiMa(request.getYouXiMiMa());
         shangPin.setZhangHaoMiaoShu(request.getZhangHaoMiaoShu());
-        shangPin.setRiZuJiaGe(request.getRiZuJiaGe());
+        if (request.getRiZuJiaGe() != null || request.getPreRent() != null || request.getZuJin() != null) {
+            shangPin.setRiZuJiaGe(resolveRiZuJiaGe(request));
+        }
         shangPin.setZuiShaoZuJieTianShu(
                 request.getZuiShaoZuJieTianShu() != null ? request.getZuiShaoZuJieTianShu() : 1);
+        if (request.getPersonalTag() != null || request.getMingCheng() != null) {
+            String newTitle = request.getBiaoTi() != null ? request.getBiaoTi() : request.getPersonalTag();
+            if (newTitle == null) newTitle = request.getMingCheng();
+            if (newTitle != null) shangPin.setBiaoTi(newTitle);
+        }
         return shangPinRepository.save(shangPin);
     }
 
@@ -234,5 +273,232 @@ public class ShangPinService {
 
     public List<ShangPin> filterShangPin(Integer minPrice, Integer maxPrice, Integer zuiShaoZuJieTianShu) {
         return shangPinRepository.filterShangPin( minPrice, maxPrice, zuiShaoZuJieTianShu);
+    }
+
+    /**
+     * 前端筛选结果页提交的富筛选条件（accountType/accountLevel/training/shootingRange/
+     * melee/agent/gunSkin/safeBox/rank/priceMin/priceMax）暂时在内存中过滤，
+     * 这些字段都存放在 metadata JSON 里，数据量小，实现简单且可读。
+     */
+    public List<ShangPin> filterShangPinAdvanced(Map<String, Object> filter) {
+        List<ShangPin> all = getAllOnShelfShangPin();
+        if (filter == null || filter.isEmpty()) {
+            return all;
+        }
+        List<ShangPin> result = new ArrayList<>();
+        for (ShangPin sp : all) {
+            if (matchFilter(sp, parseMeta(sp.getMetadata()), filter)) {
+                result.add(sp);
+            }
+        }
+        return result;
+    }
+
+    private boolean matchFilter(ShangPin sp, Map<String, Object> meta, Map<String, Object> filter) {
+        // 账号类型：前端选项其实对应区服（QQ / 微信），同时兼容 accountType
+        List<Object> accountType = toList(filter.get("accountType"));
+        if (!accountType.isEmpty()) {
+            String server = firstNonBlank(str(meta, "server"), str(meta, "quFu"));
+            String acct = str(meta, "accountType");
+            if (!matches(accountType, server) && !matches(accountType, acct)) {
+                return false;
+            }
+        }
+
+        // 账号等级下限
+        Integer minLevel = toInt(filter.get("accountLevel"));
+        if (minLevel != null) {
+            Integer level = toInt(str(meta, "accountLevel"));
+            if (level == null || level < minLevel) {
+                return false;
+            }
+        }
+
+        // 等级型筛选（训练中心 / 靶场）
+        if (!matchLevel(meta, "trainingLevel", toList(filter.get("training")))) {
+            return false;
+        }
+        if (!matchLevel(meta, "rangeLevel", toList(filter.get("shootingRange")))) {
+            return false;
+        }
+
+        // 皮肤型筛选：命中任意一个已选皮肤即算匹配
+        if (!matchSkin(toList(meta.get("knifeSkins")), toList(filter.get("melee")), true)) {
+            return false;
+        }
+        if (!matchSkin(toList(meta.get("operatorSkins")), toList(filter.get("agent")), false)) {
+            return false;
+        }
+        if (!matchSkin(toList(meta.get("weaponSkins")), toList(filter.get("gunSkin")), false)) {
+            return false;
+        }
+
+        // 安全箱（前端选项文案与库中略有差异，使用包含匹配）
+        List<Object> safeBox = toList(filter.get("safeBox"));
+        if (!safeBox.isEmpty()) {
+            String value = str(meta, "safeBox");
+            if (!matchesLoose(safeBox, value)) {
+                return false;
+            }
+        }
+
+        // 段位
+        List<Object> rank = toList(filter.get("rank"));
+        if (!rank.isEmpty() && !matches(rank, str(meta, "rank"))) {
+            return false;
+        }
+
+        // 价格区间（按日租金 riZuJiaGe 过滤）
+        BigDecimal price = sp.getRiZuJiaGe() != null ? sp.getRiZuJiaGe() : BigDecimal.ZERO;
+        BigDecimal min = toDecimal(filter.get("priceMin"));
+        BigDecimal max = toDecimal(filter.get("priceMax"));
+        if (min != null && price.compareTo(min) < 0) {
+            return false;
+        }
+        if (max != null && price.compareTo(max) > 0) {
+            return false;
+        }
+        return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> parseMeta(String json) {
+        if (json == null || json.isBlank()) {
+            return new HashMap<>();
+        }
+        try {
+            Map<String, Object> meta = new Gson().fromJson(json, Map.class);
+            return meta != null ? meta : new HashMap<>();
+        } catch (Exception e) {
+            return new HashMap<>();
+        }
+    }
+
+    private boolean matchLevel(Map<String, Object> meta, String key, List<Object> options) {
+        if (options.isEmpty()) {
+            return true;
+        }
+        Integer level = toInt(str(meta, key));
+        if (level == null) {
+            return false;
+        }
+        for (Object option : options) {
+            String text = String.valueOf(option);
+            Integer optionLevel = toInt(text);
+            if (optionLevel == null) {
+                continue;
+            }
+            if (text.contains("及以上")) {
+                if (level >= optionLevel) {
+                    return true;
+                }
+            } else if (level.equals(optionLevel)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean matchSkin(List<Object> skins, List<Object> options, boolean stripPrefix) {
+        if (options.isEmpty()) {
+            return true;
+        }
+        for (Object option : options) {
+            String target = String.valueOf(option);
+            if (stripPrefix) {
+                target = target.replace("近战-", "");
+            }
+            for (Object skin : skins) {
+                String value = String.valueOf(skin);
+                if (value.contains(target) || target.contains(value)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private List<Object> toList(Object value) {
+        List<Object> list = new ArrayList<>();
+        if (value instanceof List<?> raw) {
+            for (Object item : raw) {
+                if (item != null && !String.valueOf(item).isBlank()) {
+                    list.add(item);
+                }
+            }
+        } else if (value != null && !String.valueOf(value).isBlank()) {
+            list.add(value);
+        }
+        return list;
+    }
+
+    private boolean matches(List<Object> options, String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        for (Object option : options) {
+            if (String.valueOf(option).equals(value.trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean matchesLoose(List<Object> options, String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        for (Object option : options) {
+            String text = String.valueOf(option);
+            if (text.contains(value) || value.contains(text)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String str(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private String firstNonBlank(String first, String second) {
+        if (first != null && !first.isBlank()) {
+            return first;
+        }
+        return second;
+    }
+
+    private Integer toInt(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        String text = String.valueOf(value).replaceAll("[^0-9-]", "");
+        if (text.isBlank() || "-".equals(text)) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(text);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private BigDecimal toDecimal(Object value) {
+        if (value == null) {
+            return null;
+        }
+        String text = String.valueOf(value).trim();
+        if (text.isEmpty()) {
+            return null;
+        }
+        try {
+            return new BigDecimal(text);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

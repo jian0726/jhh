@@ -1,0 +1,38 @@
+/* 管理后台全局基础样式（独立入口，不依赖商城 App.vue） */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#admin-app {
+  min-height: 100vh;
+}
+
+body {
+  background-color: #f5f7fa;
+  font-family:
+    'PingFang SC',
+    'Microsoft YaHei',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Element Plus 主色对齐项目蓝 #00b1fe */
+#admin-app {
+  --el-color-primary: #00b1fe;
+  --el-color-primary-light-3: #4cc5fe;
+  --el-color-primary-light-5: #7fd4fe;
+  --el-color-primary-light-7: #b3e5ff;
+  --el-color-primary-light-8: #ccedff;
+  --el-color-primary-light-9: #e6f7ff;
+  --el-color-primary-dark-2: #0090cc;
+}

@@ -1,0 +1,169 @@
+{
+  "groups": [
+    {
+      "name": "alipay.credit",
+      "type": "com.delta.rental.config.AlipayCreditConfig",
+      "sourceType": "com.delta.rental.config.AlipayCreditConfig"
+    },
+    {
+      "name": "third-party",
+      "type": "com.delta.rental.config.ThirdPartyConfig",
+      "sourceType": "com.delta.rental.config.ThirdPartyConfig"
+    },
+    {
+      "name": "third-party.qq",
+      "type": "com.delta.rental.config.ThirdPartyConfig$QQ",
+      "sourceType": "com.delta.rental.config.ThirdPartyConfig",
+      "sourceMethod": "getQq()"
+    },
+    {
+      "name": "third-party.wechat",
+      "type": "com.delta.rental.config.ThirdPartyConfig$Wechat",
+      "sourceType": "com.delta.rental.config.ThirdPartyConfig",
+      "sourceMethod": "getWechat()"
+    },
+    {
+      "name": "wechat.score",
+      "type": "com.delta.rental.config.WechatScoreConfig",
+      "sourceType": "com.delta.rental.config.WechatScoreConfig"
+    },
+    {
+      "name": "yeepay",
+      "type": "com.delta.rental.config.YeepayConfig",
+      "sourceType": "com.delta.rental.config.YeepayConfig"
+    }
+  ],
+  "properties": [
+    {
+      "name": "alipay.credit.app-id",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.AlipayCreditConfig"
+    },
+    {
+      "name": "alipay.credit.charset",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.AlipayCreditConfig",
+      "defaultValue": "UTF-8"
+    },
+    {
+      "name": "alipay.credit.gateway-url",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.AlipayCreditConfig",
+      "defaultValue": "https:\/\/openapi.alipay.com\/gateway.do"
+    },
+    {
+      "name": "alipay.credit.private-key",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.AlipayCreditConfig"
+    },
+    {
+      "name": "alipay.credit.public-key",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.AlipayCreditConfig"
+    },
+    {
+      "name": "alipay.credit.return-url",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.AlipayCreditConfig"
+    },
+    {
+      "name": "alipay.credit.sign-type",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.AlipayCreditConfig",
+      "defaultValue": "RSA2"
+    },
+    {
+      "name": "third-party.qq.app-id",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.ThirdPartyConfig$QQ"
+    },
+    {
+      "name": "third-party.qq.app-key",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.ThirdPartyConfig$QQ"
+    },
+    {
+      "name": "third-party.qq.redirect-uri",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.ThirdPartyConfig$QQ"
+    },
+    {
+      "name": "third-party.wechat.app-id",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.ThirdPartyConfig$Wechat"
+    },
+    {
+      "name": "third-party.wechat.app-secret",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.ThirdPartyConfig$Wechat"
+    },
+    {
+      "name": "third-party.wechat.redirect-uri",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.ThirdPartyConfig$Wechat"
+    },
+    {
+      "name": "wechat.score.api-key",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.WechatScoreConfig"
+    },
+    {
+      "name": "wechat.score.app-id",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.WechatScoreConfig"
+    },
+    {
+      "name": "wechat.score.app-secret",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.WechatScoreConfig"
+    },
+    {
+      "name": "wechat.score.mch-id",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.WechatScoreConfig"
+    },
+    {
+      "name": "wechat.score.notify-url",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.WechatScoreConfig"
+    },
+    {
+      "name": "wechat.score.service-id",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.WechatScoreConfig"
+    },
+    {
+      "name": "yeepay.gateway-url",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.YeepayConfig",
+      "defaultValue": "https:\/\/api.yeepay.com"
+    },
+    {
+      "name": "yeepay.merchant-id",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.YeepayConfig"
+    },
+    {
+      "name": "yeepay.notify-url",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.YeepayConfig"
+    },
+    {
+      "name": "yeepay.return-url",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.YeepayConfig"
+    },
+    {
+      "name": "yeepay.secret-key",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.YeepayConfig"
+    },
+    {
+      "name": "yeepay.version",
+      "type": "java.lang.String",
+      "sourceType": "com.delta.rental.config.YeepayConfig",
+      "defaultValue": "1.0"
+    }
+  ],
+  "hints": []
+}

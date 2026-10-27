@@ -1,5 +1,6 @@
 package com.delta.rental.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
@@ -38,8 +39,17 @@ public class DingDan {
 
     private LocalDateTime zuJieJieShuShiJian;
 
+    /**
+     * 临时登录账号。属于敏感凭证：禁止随订单列表/详情序列化，
+     * 租客只能通过 {@code GET /api/dingdan/{dingDanHao}/credential} 在租期内获取。
+     */
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String linShiZhangHao;
 
+    /**
+     * 临时登录密码。同 {@link #linShiZhangHao}，禁止对外序列化。
+     */
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String linShiMiMa;
 
     private LocalDateTime fuKuanShiJian;

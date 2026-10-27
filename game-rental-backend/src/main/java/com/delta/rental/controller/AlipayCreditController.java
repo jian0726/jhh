@@ -6,7 +6,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "第三方信用-芝麻信用", description = "芝麻信用分查询与授权")
 @RestController
 @RequestMapping("/api/alipay-credit")
 @RequiredArgsConstructor
@@ -14,9 +17,9 @@ public class AlipayCreditController {
 
     private final AlipayCreditService alipayCreditService;
 
+    @Operation(summary = "查询芝麻信用分")
     @GetMapping("/score")
     public ApiResponse<Map<String, Object>> getCreditScore(
-            @RequestHeader("Authorization") String token,
             @RequestParam(required = false) String userId) {
         
         if (userId == null || userId.isEmpty()) {
@@ -27,9 +30,9 @@ public class AlipayCreditController {
         return ApiResponse.success(result);
     }
 
+    @Operation(summary = "发起芝麻信用授权")
     @PostMapping("/authorize")
     public ApiResponse<Map<String, Object>> authorize(
-            @RequestHeader("Authorization") String token,
             @RequestParam String authCode) {
         
         String userId = "default_user";

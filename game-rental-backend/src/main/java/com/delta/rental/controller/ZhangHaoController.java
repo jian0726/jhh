@@ -8,6 +8,7 @@ import com.delta.rental.exception.BusinessException;
 import com.delta.rental.service.CaptchaService;
 import com.delta.rental.service.YongHuService;
 import com.delta.rental.repository.YongHuRepository;
+import com.delta.rental.security.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,7 +16,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "账号与认证", description = "注册、登录、验证码、找回密码、实名认证")
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -26,6 +30,7 @@ public class ZhangHaoController {
   private final YongHuRepository yongHuRepository;
   private final PasswordEncoder passwordEncoder;
 
+    @Operation(summary = "发送短信验证码")
   @GetMapping("/fasong-yanzhengma")
   public ApiResponse<Map<String, Object>> fasongYanZhengMa(@RequestParam String shouJiHao) {
     String key = "sms:" + shouJiHao;
@@ -39,6 +44,7 @@ public class ZhangHaoController {
     return ApiResponse.success(result);
   }
 
+    @Operation(summary = "发送邮箱验证码")
   @PostMapping("/send-email-code")
   public ApiResponse<Map<String, Object>> sendEmailCode(@RequestBody Map<String, String> body) {
     String email = body.get("email");
@@ -55,6 +61,7 @@ public class ZhangHaoController {
     return ApiResponse.success(result);
   }
 
+    @Operation(summary = "通过邮箱验证码重置密码")
   @PostMapping("/reset-password")
   public ApiResponse<Map<String, Object>> resetPassword(@RequestBody Map<String, String> body) {
     String email = body.get("email");
@@ -88,63 +95,58 @@ public class ZhangHaoController {
     return ApiResponse.success(result);
   }
 
+    @Operation(summary = "用户注册")
   @PostMapping("/zhuce")
   public ApiResponse<Map<String, Object>> zhuce(@Valid @RequestBody ZhuCeRequest request) {
     return ApiResponse.success(yongHuService.zhuCe(request));
   }
 
+    @Operation(summary = "用户登录")
   @PostMapping("/denglu")
   public ApiResponse<Map<String, Object>> denglu(@Valid @RequestBody DengLuRequest request) {
     return ApiResponse.success(yongHuService.dengLu(request));
   }
 
+    @Operation(summary = "查询用户公开信息")
   @GetMapping("/yonghu/{id}")
-  public ApiResponse<YongHu> getYongHu(@PathVariable Long id) {
-    return ApiResponse.success(yongHuService.getYongHuById(id));
+  public ApiResponse<Map<String, Object>> getYongHu(@PathVariable Long id) {
+    // 返回脱敏后的用户信息，避免把密码等敏感字段透出给前端
+    return ApiResponse.success(yongHuService.toUserVo(yongHuService.getYongHuById(id)));
   }
 
+    @Operation(summary = "提交实名认证")
   @PostMapping("/shiming")
   public ApiResponse<YongHu> shimingRenZheng(
-      @RequestHeader("Authorization") String token,
       @RequestParam String zhenShiXingMing,
       @RequestParam String shenFenZheng) {
-    Long yongHuId = tiQuYongHuId(token);
+    Long yongHuId = SecurityUtils.getCurrentUserId();
     return ApiResponse.success(yongHuService.shiMingRenZheng(yongHuId, zhenShiXingMing, shenFenZheng));
   }
 
+    @Operation(summary = "修改用户名 / 手机号")
   @PutMapping("/yonghu")
   public ApiResponse<YongHu> updateYongHuInfo(
-      @RequestHeader("Authorization") String token,
       @RequestParam(required = false) String yongHuMing,
       @RequestParam(required = false) String shouJiHao) {
-    Long yongHuId = tiQuYongHuId(token);
+    Long yongHuId = SecurityUtils.getCurrentUserId();
     return ApiResponse.success(yongHuService.updateYongHuInfo(yongHuId, yongHuMing, shouJiHao));
   }
 
+    @Operation(summary = "修改登录密码")
   @PutMapping("/yonghu/mima")
   public ApiResponse<Void> updateMiMa(
-      @RequestHeader("Authorization") String token,
       @RequestParam String oldPassword,
       @RequestParam String newPassword) {
-    Long yongHuId = tiQuYongHuId(token);
+    Long yongHuId = SecurityUtils.getCurrentUserId();
     yongHuService.updateMiMa(yongHuId, oldPassword, newPassword);
     return ApiResponse.success("密码修改成功", null);
   }
 
+    @Operation(summary = "查询实名认证状态")
   @GetMapping("/yonghu/shiming")
-  public ApiResponse<Map<String, Object>> getShiMingStatus(@RequestHeader("Authorization") String token) {
-    Long yongHuId = tiQuYongHuId(token);
+  public ApiResponse<Map<String, Object>> getShiMingStatus() {
+    Long yongHuId = SecurityUtils.getCurrentUserId();
     return ApiResponse.success(yongHuService.getShiMingStatus(yongHuId));
   }
 
-  private Long tiQuYongHuId(String token) {
-    if (token.startsWith("Bearer ")) {
-      token = token.substring(7);
-    }
-    String[] parts = token.split("\\.");
-    String payload = parts[1];
-    String decoded = new String(java.util.Base64.getUrlDecoder().decode(payload));
-    return Long
-        .parseLong(com.google.gson.JsonParser.parseString(decoded).getAsJsonObject().get("userId").getAsString());
-  }
 }

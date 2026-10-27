@@ -6,13 +6,17 @@ import com.delta.rental.repository.FengXianRepository;
 import com.delta.rental.repository.YongHuRepository;
 import com.delta.rental.service.CaptchaService;
 import com.delta.rental.service.FengKongService;
+import com.delta.rental.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "风控-指纹与验证码", description = "设备指纹上报、风险状态、图形验证码")
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -23,12 +27,12 @@ public class RiskController {
     private final FengKongService fengKongService;
     private final CaptchaService captchaService;
 
+    @Operation(summary = "上报设备指纹")
     @PostMapping("/fingerprint")
     public ApiResponse<Map<String, Object>> uploadFingerprint(
-            @RequestHeader("Authorization") String token,
             @RequestParam String fingerprint) {
 
-        Long userId = tiQuYongHuId(token);
+        Long userId = SecurityUtils.getCurrentUserId();
 
         FengXian fengXian = new FengXian();
         fengXian.setYongHuId(userId);
@@ -44,9 +48,10 @@ public class RiskController {
         return ApiResponse.success(result);
     }
 
+    @Operation(summary = "查询当前用户风险状态")
     @GetMapping("/risk/status")
-    public ApiResponse<Map<String, Object>> getRiskStatus(@RequestHeader("Authorization") String token) {
-        Long userId = tiQuYongHuId(token);
+    public ApiResponse<Map<String, Object>> getRiskStatus() {
+        Long userId = SecurityUtils.getCurrentUserId();
 
         Map<String, Object> result = new HashMap<>();
 
@@ -83,6 +88,7 @@ public class RiskController {
         return ApiResponse.success(result);
     }
 
+    @Operation(summary = "获取图形验证码")
     @GetMapping("/captcha")
     public ApiResponse<Map<String, Object>> getCaptcha(@RequestParam String key) {
         String captcha = captchaService.generateCaptcha(key);
@@ -93,6 +99,7 @@ public class RiskController {
         return ApiResponse.success(result);
     }
 
+    @Operation(summary = "校验图形验证码")
     @PostMapping("/captcha/verify")
     public ApiResponse<Boolean> verifyCaptcha(
             @RequestParam String key,
@@ -102,14 +109,4 @@ public class RiskController {
         return ApiResponse.success(isValid);
     }
 
-    private Long tiQuYongHuId(String token) {
-        if (token.startsWith("Bearer ")) {
-            token = token.substring(7);
-        }
-        String[] parts = token.split("\\.");
-        String payload = parts[1];
-        String decoded = new String(java.util.Base64.getUrlDecoder().decode(payload));
-        return Long.parseLong(
-                com.google.gson.JsonParser.parseString(decoded).getAsJsonObject().get("userId").getAsString());
-    }
 }

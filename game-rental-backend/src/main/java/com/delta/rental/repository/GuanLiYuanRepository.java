@@ -9,4 +9,7 @@ import java.util.List;
 public interface GuanLiYuanRepository extends JpaRepository<GuanLiYuan, Long> {
     List<GuanLiYuan> findByGuanLiYuanId(Long guanLiYuanId);
     List<GuanLiYuan> findByMuBiaoLeiXingAndMuBiaoId(String muBiaoLeiXing, Long muBiaoId);
+
+    /** 后台「操作日志」列表：按时间倒序。 */
+    List<GuanLiYuan> findAllByOrderByChuangJianShiJianDesc();
 }

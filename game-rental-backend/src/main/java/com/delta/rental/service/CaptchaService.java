@@ -47,6 +47,24 @@ public class CaptchaService {
     return info.captcha.equalsIgnoreCase(captcha);
   }
 
+  /**
+   * 清理已过期的验证码，避免内存中的缓存无限增长。
+   *
+   * <p>由 {@code ScheduledTasks#cleanExpiredCaptcha} 定期调用。
+   *
+   * @return 被清理的条数
+   */
+  public int cleanUpExpired() {
+    int before = captchaCache.size();
+    captchaCache.entrySet().removeIf(entry -> entry.getValue().isExpired());
+    return before - captchaCache.size();
+  }
+
+  /** 当前缓存中的验证码条数（便于监控与测试）。 */
+  public int size() {
+    return captchaCache.size();
+  }
+
   private String generateRandomCaptcha(int length) {
     StringBuilder sb = new StringBuilder();
     Random random = new Random();

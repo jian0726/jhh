@@ -1,5 +1,6 @@
 package com.delta.rental.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -15,6 +16,7 @@ public class YongHu {
     @Column(nullable = false, unique = true, length = 50)
     private String yongHuMing;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false, length = 100)
     private String miMa;
 

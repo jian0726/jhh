@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface LunBoTuRepository extends JpaRepository<LunBoTu, Long> {
     List<LunBoTu> findByZhuangTaiOrderByShunXuAsc(Integer zhuangTai);
+
+    List<LunBoTu> findAllByOrderByShunXuAsc();
 }

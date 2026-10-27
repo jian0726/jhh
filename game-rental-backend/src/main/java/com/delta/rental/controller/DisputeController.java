@@ -5,6 +5,7 @@ import com.delta.rental.entity.DingDan;
 import com.delta.rental.entity.FengXian;
 import com.delta.rental.service.DingDanService;
 import com.delta.rental.repository.FengXianRepository;
+import com.delta.rental.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,7 +13,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "纠纷", description = "纠纷提交、证据上传与详情查询")
 @RestController
 @RequestMapping("/api/disputes")
 @RequiredArgsConstructor
@@ -21,9 +25,10 @@ public class DisputeController {
     private final DingDanService dingDanService;
     private final FengXianRepository fengXianRepository;
 
+    @Operation(summary = "获取我的纠纷列表")
     @GetMapping("/my")
-    public ApiResponse<List<Map<String, Object>>> getMyDisputes(@RequestHeader("Authorization") String token) {
-        Long userId = tiQuYongHuId(token);
+    public ApiResponse<List<Map<String, Object>>> getMyDisputes() {
+        Long userId = SecurityUtils.getCurrentUserId();
 
         List<DingDan> orders = dingDanService.getMyOrders(userId);
         List<Map<String, Object>> disputes = orders.stream()
@@ -42,6 +47,7 @@ public class DisputeController {
         return ApiResponse.success(disputes);
     }
 
+    @Operation(summary = "查询纠纷详情")
     @GetMapping("/{id}")
     public ApiResponse<Map<String, Object>> getDisputeDetail(@PathVariable Long id) {
         DingDan order = dingDanService.getDingDanByHao(id.toString());
@@ -63,15 +69,16 @@ public class DisputeController {
         return ApiResponse.success(dispute);
     }
 
+    @Operation(summary = "提交纠纷")
     @PostMapping
     public ApiResponse<DingDan> submitDispute(
-            @RequestHeader("Authorization") String token,
             @RequestParam String dingDanHao,
             @RequestParam String reason) {
-        Long userId = tiQuYongHuId(token);
+        Long userId = SecurityUtils.getCurrentUserId();
         return ApiResponse.success(dingDanService.jiufengDingDan(dingDanHao, userId, reason));
     }
 
+    @Operation(summary = "上传纠纷证据")
     @PostMapping("/{id}/evidence")
     public ApiResponse<Map<String, Object>> uploadEvidence(
             @PathVariable Long id,
@@ -90,14 +97,4 @@ public class DisputeController {
         return ApiResponse.success(result);
     }
 
-    private Long tiQuYongHuId(String token) {
-        if (token.startsWith("Bearer ")) {
-            token = token.substring(7);
-        }
-        String[] parts = token.split("\\.");
-        String payload = parts[1];
-        String decoded = new String(java.util.Base64.getUrlDecoder().decode(payload));
-        return Long.parseLong(
-                com.google.gson.JsonParser.parseString(decoded).getAsJsonObject().get("userId").getAsString());
-    }
 }

@@ -13,20 +13,20 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "shouCang")
+@Table(name = "shou_cang")
 public class ShouCang {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(name = "yongHuId", nullable = false)
+  @Column(name = "yong_hu_id", nullable = false)
   private Long yongHuId;
 
-  @Column(name = "shangPinId", nullable = false)
+  @Column(name = "shang_pin_id", nullable = false)
   private Long shangPinId;
 
-  @Column(name = "chuangJianShiJian", nullable = false)
+  @Column(name = "chuang_jian_shi_jian", nullable = false)
   private LocalDateTime chuangJianShiJian;
 
   @PrePersist

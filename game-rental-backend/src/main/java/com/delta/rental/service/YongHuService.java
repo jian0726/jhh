@@ -49,8 +49,11 @@ public class YongHuService {
 
             String token = jwtUtil.generateToken(yongHu.getId(), yongHu.getYongHuMing(), yongHu.getJueSe());
             Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("message", "注册成功");
             result.put("token", token);
-            result.put("yongHu", yongHu);
+            result.put("user", toUserVo(yongHu));
+            result.put("yongHu", toUserVo(yongHu));
             return result;
         }
 
@@ -84,8 +87,11 @@ public class YongHuService {
 
         String token = jwtUtil.generateToken(yongHu.getId(), yongHu.getYongHuMing(), yongHu.getJueSe());
         Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("message", "注册成功");
         result.put("token", token);
-        result.put("yongHu", yongHu);
+        result.put("user", toUserVo(yongHu));
+        result.put("yongHu", toUserVo(yongHu));
         return result;
     }
 
@@ -94,21 +100,39 @@ public class YongHuService {
         YongHu yongHu = yongHuRepository.findByYongHuMing(request.getYongHuMing())
                 .orElseGet(() -> yongHuRepository.findByShouJiHao(request.getYongHuMing())
                         .orElseGet(() -> yongHuRepository.findByEmail(request.getYongHuMing())
-                                .orElseThrow(() -> new BusinessException(401, "用户名或密码错误"))));
-        
+                                .orElseThrow(() -> new BusinessException(400, "用户名或密码错误"))));
+
         if (!passwordEncoder.matches(request.getMiMa(), yongHu.getMiMa())) {
-            throw new BusinessException(401, "用户名或密码错误");
+            // 业务校验失败使用 400，避免前端拦截器把登录失败误判为“登录态失效”而跳转首页
+            throw new BusinessException(400, "用户名或密码错误");
         }
-        
+
         if (yongHu.getZhuangTai() == 1) {
             throw new BusinessException(403, "账号已被封禁");
         }
-        
+
         String token = jwtUtil.generateToken(yongHu.getId(), yongHu.getYongHuMing(), yongHu.getJueSe());
         Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("message", "登录成功");
         result.put("token", token);
-        result.put("yongHu", yongHu);
+        result.put("user", toUserVo(yongHu));
+        result.put("yongHu", toUserVo(yongHu));
         return result;
+    }
+
+    /**
+     * 转换为前端使用的用户信息结构（脱敏，不返回密码）
+     */
+    public Map<String, Object> toUserVo(YongHu yongHu) {
+        Map<String, Object> vo = new HashMap<>();
+        vo.put("id", yongHu.getId());
+        vo.put("yongHuMing", yongHu.getYongHuMing());
+        vo.put("shouJiHao", yongHu.getShouJiHao());
+        vo.put("email", yongHu.getEmail());
+        vo.put("jueSe", yongHu.getJueSe());
+        vo.put("shiFouShiMing", yongHu.getShiFouShiMing());
+        return vo;
     }
     
     public YongHu getYongHuById(Long id) {

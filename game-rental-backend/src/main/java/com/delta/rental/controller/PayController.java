@@ -8,7 +8,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "支付", description = "订单支付与支付状态查询")
 @RestController
 @RequestMapping("/api/pay")
 @RequiredArgsConstructor
@@ -16,6 +19,7 @@ public class PayController {
 
     private final DingDanService dingDanService;
 
+    @Operation(summary = "订单支付")
     @PostMapping
     public ApiResponse<Map<String, Object>> payOrder(
             @RequestParam String dingDanHao,
@@ -32,6 +36,7 @@ public class PayController {
         return ApiResponse.success(result);
     }
 
+    @Operation(summary = "查询支付状态")
     @GetMapping("/status/{dingDanHao}")
     public ApiResponse<Map<String, Object>> getPayStatus(@PathVariable String dingDanHao) {
         DingDan dingDan = dingDanService.getDingDanByHao(dingDanHao);

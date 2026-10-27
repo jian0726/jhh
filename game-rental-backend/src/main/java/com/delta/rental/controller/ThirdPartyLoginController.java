@@ -7,7 +7,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "第三方登录", description = "微信/QQ 授权地址与回调")
 @RestController
 @RequestMapping("/api/oauth")
 @RequiredArgsConstructor
@@ -15,6 +18,7 @@ public class ThirdPartyLoginController {
 
     private final ThirdPartyLoginService thirdPartyLoginService;
 
+    @Operation(summary = "获取第三方登录授权地址")
     @GetMapping("/auth-url")
     public ApiResponse<Map<String, String>> getAuthUrl(
             @RequestParam String type,
@@ -27,6 +31,7 @@ public class ThirdPartyLoginController {
         return ApiResponse.success(result);
     }
 
+    @Operation(summary = "第三方登录回调")
     @PostMapping("/callback")
     public ApiResponse<Map<String, Object>> callback(
             @RequestParam String type,

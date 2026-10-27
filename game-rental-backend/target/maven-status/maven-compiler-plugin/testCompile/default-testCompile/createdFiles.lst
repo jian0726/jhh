@@ -1,0 +1,4 @@
+com\delta\rental\config\SecurityConfigTest.class
+com\delta\rental\security\SecurityUtilsTest.class
+com\delta\rental\service\YongHuServiceTest.class
+com\delta\rental\util\JwtUtilTest.class
